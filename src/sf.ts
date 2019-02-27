@@ -4,28 +4,30 @@ import {
   FullSchema,
   FullSchemaDefinition,
   Options,
-  SFResult,
-  SFSchema,
+  ResultValue,
+  RunOptions,
 } from './interfaces';
-import { findSchemaDefinition, mergeDefinitions } from './util';
+import { findSchemaDefinition, getCustomProperty, mergeDefinitions, removeXml } from './util';
 
-interface RunOptions {
-  path: string;
-  method: string;
-  config: Config;
-  schema: FullSchema;
-}
-
-function optimizationProperyies(options: RunOptions): FullSchema {
+function coverProperty(options: RunOptions): FullSchema {
+  const eachCallback = options.config!.sf!.propertyCallback;
   const inFn = (schema: FullSchema, parentSchema?: FullSchema) => {
     const properties = schema.properties as { [propertyName: string]: Schema };
     removeXml(schema);
     Object.keys(properties).forEach(propertyName => {
       const property = properties[propertyName] as FullSchema;
       fixDefaultProperty(propertyName, property, options);
-      Object.assign(property, getCustomProperty(propertyName, options) as Schema);
+      Object.assign(property, getCustomProperty('sf', propertyName, options) as Schema);
       // removed xml
       removeXml(property);
+      if (eachCallback) {
+        eachCallback({
+          name: propertyName,
+          property,
+          path: options.path,
+          method: options.method,
+        });
+      }
       // children
       if (property.properties && Object.keys(property.properties).length) {
         inFn(property, schema);
@@ -42,15 +44,11 @@ function optimizationProperyies(options: RunOptions): FullSchema {
   return options.schema;
 }
 
-function removeXml(property: Schema) {
-  delete property.xml;
-}
-
 function fixDefaultProperty(
   name: string,
   property: FullSchema,
   options: RunOptions,
-): SFSchema | null {
+): FullSchema | null {
   // format
   fixFormat(name, property, options);
   // Title
@@ -72,7 +70,7 @@ function getDefaultFormatByName(name: string): string {
   return '';
 }
 
-function fixFormat(name: string, property: SFSchema, options: RunOptions): void {
+function fixFormat(name: string, property: FullSchema, options: RunOptions): void {
   if (property.format == null) {
     property.format = getDefaultFormatByName(name);
   }
@@ -82,13 +80,13 @@ function fixFormat(name: string, property: SFSchema, options: RunOptions): void 
   // removed: int32, int64
   if (property.format === 'int32' || property.format === 'int64') {
     delete property.format;
-    if (property.type !== 'integer' || property.type !== 'number') {
+    if (property.type !== 'integer' && property.type !== 'number') {
       property.type = 'number';
     }
   }
 }
 
-function fixTitle(name: string, property: SFSchema, options: RunOptions): void {
+function fixTitle(name: string, property: FullSchema, options: RunOptions): void {
   if (property.title != null) {
     return;
   }
@@ -109,7 +107,7 @@ function fixTitle(name: string, property: SFSchema, options: RunOptions): void {
   }
 }
 
-function fixSingleArray(property: SFSchema, options: RunOptions): void {
+function fixSingleArray(property: FullSchema, options: RunOptions): void {
   if (property.type !== 'array' || !property.items) {
     return;
   }
@@ -123,19 +121,7 @@ function fixSingleArray(property: SFSchema, options: RunOptions): void {
   }
 }
 
-function getCustomProperty(name: string, options: RunOptions): Schema | null {
-  const ls = options.config.sf!.properties!.filter(w => w.name === name);
-  if (ls.length === 0) {
-    return null;
-  }
-  const pathLs = ls.filter(w => !!w.path && w.path === options.path);
-  if (pathLs.length > 0) {
-    return pathLs[0].value as Schema;
-  }
-  return ls[0].value as Schema;
-}
-
-export function genSF(data: Spec, options: Options, config: Config): SFResult | null {
+export function generator(data: Spec, options: Options, config: Config): ResultValue | null {
   const path = `${config.pathPrefix || ''}${options.path}`;
   const method = options.method || config.sf!.method || 'put';
   const pathObj = data.paths[path] as any;
@@ -173,8 +159,12 @@ export function genSF(data: Spec, options: Options, config: Config): SFResult | 
     schema,
   };
 
-  // Optimization property ui
-  optimizationProperyies(runOpt);
+  coverProperty(runOpt);
+
+  const finishedCallback = config!.sf!.finishedCallback;
+  if (finishedCallback) {
+    finishedCallback({ schema, path, method });
+  }
 
   return schema;
 }

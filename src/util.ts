@@ -1,11 +1,28 @@
 import extend from 'extend';
 import { Schema } from 'swagger-schema-official';
-import { FullSchemaDefinition } from './interfaces';
+import { FullSchemaDefinition, GenType, RunOptions } from './interfaces';
 
 const refPrefix = `#/definitions/`;
 
 export function getDefinitionName(ref: string): string {
   return ref.substr(refPrefix.length);
+}
+
+export function removeXml(property: Schema) {
+  delete property.xml;
+}
+
+export function getCustomProperty(type: GenType, name: string, options: RunOptions): any {
+  const cog = type === 'st' ? options.config.st : options.config.sf;
+  const ls = cog!.properties!.filter(w => w.name === name);
+  if (ls.length === 0) {
+    return null;
+  }
+  const pathLs = ls.filter(w => !!w.path && w.path === options.path);
+  if (pathLs.length > 0) {
+    return pathLs[0].value as Schema;
+  }
+  return ls[0].value as Schema;
 }
 
 export function findSchemaDefinition($ref: string, definitions: FullSchemaDefinition) {

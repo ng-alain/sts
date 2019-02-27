@@ -1,6 +1,11 @@
-import { Schema } from 'swagger-schema-official';
+import { Schema, Spec } from 'swagger-schema-official';
+
+// #region cli
+
+export type GenType = 'sf' | 'st';
 
 export interface Options {
+  type?: GenType;
   path: string;
   /**
    * 指定方法，未指定时默认：
@@ -10,6 +15,10 @@ export interface Options {
   method?: string;
 }
 
+// #endregion
+
+// #region Config
+
 export const CONFIG: Config = {
   pathPrefix: '',
   descriptionIsTitle: true,
@@ -17,7 +26,7 @@ export const CONFIG: Config = {
     id: '编号',
     name: '名称',
     email: '邮箱',
-    // status: '状态',
+    status: '状态',
   },
   sf: {
     method: 'put',
@@ -62,27 +71,22 @@ export interface Config {
   st?: STConfig;
 }
 
-export interface SFConfig {
-  /**
-   * 指定方法，未指定时默认：
-   * - `sf` 为 `put`
-   */
-  method?: string;
-  /** 由于 `sf` 并不支持这种类型，默认被转化为 `select` 小部件 */
-  singleArray?: SFSchema;
-  /** 自定义属性的 `Schema` */
-  properties?: PathConfig[];
+// #endregion
+
+// #region Result
+
+export interface Result {
+  spec: Spec;
+  value: ResultValue | null;
 }
 
-export interface STConfig {
-  /**
-   * 指定方法，未指定时默认：
-   * - `st` 为 `get`
-   */
-  method?: string;
-  /** 自定义属性的 `Schema` */
-  properties?: PathConfig[];
+export interface ResultValue {
+  [key: string]: any;
 }
+
+// #endregion
+
+// #region sf, st Config
 
 export interface PathConfig {
   /**
@@ -97,6 +101,72 @@ export interface PathConfig {
    * 值分为 `SFSchema` 或 `STColumn` 类型
    */
   value?: SFSchema;
+}
+
+export interface SFPropertyCallbackOptions {
+  name: string;
+  property: Schema;
+  path: string;
+  method: string;
+}
+
+export interface SFFinishedCallbackOptions {
+  schema: Schema;
+  path: string;
+  method: string;
+}
+
+export interface SFConfig {
+  /**
+   * 指定方法，默认：`put`
+   */
+  method?: string;
+  /** 由于 `sf` 并不支持这种类型，默认被转化为 `select` 小部件 */
+  singleArray?: SFSchema;
+  /** 自定义属性的 `Schema` */
+  properties?: PathConfig[];
+  /** 递归属性回调 */
+  propertyCallback?: (optinos: SFPropertyCallbackOptions) => void;
+  /** 完成时回调 */
+  finishedCallback?: (options: SFFinishedCallbackOptions) => void;
+}
+
+export interface STPropertyCallbackOptions {
+  name: string;
+  property: Schema;
+  column: STColumn;
+  path: string;
+  method: string;
+}
+
+export interface STFinishedCallbackOptions {
+  columns: STColumn[];
+  path: string;
+  method: string;
+}
+
+export interface STConfig {
+  /**
+   * 指定方法，默认：`get`
+   */
+  method?: string;
+  /** 自定义属性的 `Schema` */
+  properties?: PathConfig[];
+  /** 递归属性回调 */
+  propertyCallback?: (optinos: STPropertyCallbackOptions) => void;
+  /** 完成时回调 */
+  finishedCallback?: (options: STFinishedCallbackOptions) => void;
+}
+
+// #endregion
+
+// #region running
+
+export interface RunOptions {
+  path: string;
+  method: string;
+  config: Config;
+  schema: FullSchema;
 }
 
 export interface SFSchema {
@@ -229,16 +299,6 @@ export interface SFSchema {
   ui?: any;
 }
 
-export interface Result {
-  spec?: any;
-  sf?: SFResult | null;
-  st?: STResult | null;
-}
-
-export interface SFResult {
-  [key: string]: any;
-}
-
 export interface FullSchema extends Schema {
   definitions?: FullSchemaDefinition;
 }
@@ -247,6 +307,148 @@ export interface FullSchemaDefinition {
   [definitionsName: string]: FullSchema;
 }
 
-export interface STResult {
+export interface STColumn {
   [key: string]: any;
+
+  /**
+   * 用于定义数据源主键，例如：`STStatistical`
+   */
+  key?: string;
+  /**
+   * 列标题
+   */
+  title: string;
+  /**
+   * 列标题 i18n
+   */
+  i18n?: string;
+  /**
+   * 列数据在数据项中对应的 key，支持 `a.b.c` 的嵌套写法，例如：
+   * - `id`
+   * - `price.market`
+   * - `[ 'price', 'market' ]`
+   */
+  index?: string | string[];
+  /**
+   * 类型
+   * - `no` 行号，计算规则：`index + noIndex`
+   * - `checkbox` 多选
+   * - `radio` 单选
+   * - `link` 链接，务必指定 `click`
+   * - `badge` [徽标](https://ng.ant.design/components/badge/zh)，务必指定 `badge` 参数配置徽标对应值
+   * - `tag` [标签](https://ng.ant.design/components/tag/zh)，务必指定 `tag` 参数配置标签对应值
+   * - `img` 图片且居中(若 `className` 存在则优先)
+   * - `number` 数字且居右(若 `className` 存在则优先)
+   * - `currency` 货币且居右(若 `className` 存在则优先)
+   * - `date` 日期格式且居中(若 `className` 存在则优先)，使用 `dateFormat` 自定义格式
+   * - `yn` 将`boolean`类型徽章化 [document](https://ng-alain.com/docs/data-render#yn)
+   */
+  type?:
+    | 'checkbox'
+    | 'link'
+    | 'badge'
+    | 'tag'
+    | 'radio'
+    | 'img'
+    | 'currency'
+    | 'number'
+    | 'date'
+    | 'yn'
+    | 'no';
+  /**
+   * 按钮组
+   */
+  buttons?: Array<{ [key: string]: any }>;
+  /**
+   * 数字格式，`type=number` 有效
+   */
+  numberDigits?: string;
+  /**
+   * 日期格式，`type=date` 有效，（默认：`YYYY-MM-DD HH:mm`）
+   */
+  dateFormat?: string;
+  /**
+   * 当 `type=yn` 有效
+   */
+  yn?: STColumnYn;
+  /** 当不存在数据时以默认值替代 */
+  default?: string;
+  /**
+   * 徽标配置项
+   */
+  badge?: STColumnBadge;
+  /**
+   * 标签配置项
+   */
+  tag?: STColumnTag;
 }
+
+/** 当 `type=yn` 有效 */
+export interface STColumnYn {
+  /**
+   * 真值条件，（默认：`true`）
+   */
+  truth?: any;
+  /**
+   * 徽章 `true` 时文本，（默认：`是`）
+   */
+  yes?: string;
+  /**
+   * 徽章 `false` 时文本，（默认：`否`）
+   */
+  no?: string;
+}
+
+/**
+ * 徽标信息
+ */
+export interface STColumnBadge {
+  [key: number]: STColumnBadgeValue;
+  [key: string]: STColumnBadgeValue;
+}
+
+export interface STColumnBadgeValue {
+  /**
+   * 文本
+   */
+  text?: string;
+  /**
+   * 徽标颜色值
+   */
+  color?: 'success' | 'processing' | 'default' | 'error' | 'warning';
+}
+
+/**
+ * 标签信息
+ */
+export interface STColumnTag {
+  [key: number]: STColumnTagValue;
+  [key: string]: STColumnTagValue;
+}
+
+export interface STColumnTagValue {
+  /**
+   * 文本
+   */
+  text?: string;
+  /**
+   * 颜色值，支持预设和色值
+   * - 预设：geekblue,blue,purple,success,red,volcano,orange,gold,lime,green,cyan
+   * - 色值：#f50,#ff0
+   */
+  color?:
+    | 'geekblue'
+    | 'blue'
+    | 'purple'
+    | 'success'
+    | 'red'
+    | 'volcano'
+    | 'orange'
+    | 'gold'
+    | 'lime'
+    | 'green'
+    | 'cyan'
+    | string;
+}
+
+// #endregion

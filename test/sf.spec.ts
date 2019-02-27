@@ -14,19 +14,19 @@ describe('sf', () => {
   describe('should be return null', () => {
     it('when path is not found', async () => {
       const res = await generator(SPEC, { path: '/invalid-path' });
-      expect(res.sf).eq(null);
+      expect(res.value).eq(null);
     });
     it('when method is not found', async () => {
       const res = await generator(SPEC, { path: '/pet', method: 'get' });
-      expect(res.sf).eq(null);
+      expect(res.value).eq(null);
     });
     it('when parameters is not found', async () => {
       const res = await generator(SPEC, { path: '/store/inventory', method: 'get' });
-      expect(res.sf).eq(null);
+      expect(res.value).eq(null);
     });
     it('when not found body in parameters', async () => {
       const res = await generator(SPEC, { path: '/pet/findByStatus', method: 'get' });
-      expect(res.sf).eq(null);
+      expect(res.value).eq(null);
     });
     it('when invalid $ref', async () => {
       const a = spy(console, 'error');
@@ -34,7 +34,7 @@ describe('sf', () => {
       const parameter = data.paths['/pet'].post!.parameters![0] as BodyParameter;
       parameter!.schema!.$ref = `#/definitions/Pet-invalid`;
       const res = await generator(data, { path: '/pet', method: 'post' });
-      expect(res.sf).eq(null);
+      expect(res.value).eq(null);
       expect(a.called).eq(true);
     });
   });
@@ -179,17 +179,21 @@ class SFPage {
   }
 
   public async getResult(data: Spec, options: Options | null = null, config: Config | null = null) {
-    this.res = await generator(data, options || { path: '/pet', method: 'post' }, config as Config);
+    this.res = await generator(
+      data,
+      options || { type: 'sf', path: '/pet', method: 'post' },
+      config as Config,
+    );
     return this;
   }
 
   public checkValue(name: string, key: string, value: any) {
-    expect(this.res!.sf!.properties![name]![key]).eq(value);
+    expect(this.res!.value!.properties![name]![key]).eq(value);
     return this;
   }
 
   public checkDefine(name: string, key: string, result: boolean) {
-    const isUndefined = typeof this.res!.sf!.properties![name]![key] === 'undefined';
+    const isUndefined = typeof this.res!.value!.properties![name]![key] === 'undefined';
     expect(isUndefined).eq(!result);
     return this;
   }

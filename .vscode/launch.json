@@ -9,7 +9,7 @@
     "request": "launch",
     "name": "test",
     "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
-    "args": ["-r", "ts-node/register", "test/sf.spec.ts"],
+    "args": ["-r", "ts-node/register", "test/st.spec.ts"],
     "env": {
       "TS_NODE_PROJECT": "test/tsconfig.json"
     },

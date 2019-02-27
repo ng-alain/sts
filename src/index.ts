@@ -11,14 +11,20 @@ const cli = meow({
   Usage
     ng-alain-sts <Swagger JSON file path>
   Example
-    ng-alain-sts -p=/pet swagger.json
+    ng-alain-sts -t=sf -p=/pet swagger.json
   Options
+    -t, --type    Specified generate type, can be set 'sf' or 'st', default: 'sf'
     -p, --path    Specified path, e.g: '/api/pet', '/pet'
     -m, --method  Specified method type, e.g: get, post, default: get
     -c, --config  A filepath of your config script
                   Example of a config script: https://github.com/cipchk/vscode-snippet-generator-tpl/blob/master/snippet-config.json
   `,
   flags: {
+    type: {
+      type: 'string',
+      alias: 't',
+      default: 'sf',
+    },
     path: {
       type: 'string',
       alias: 'p',

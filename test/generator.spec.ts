@@ -10,7 +10,7 @@ const root = path.join(__dirname, '..');
 describe('generator', () => {
   describe('[swagger load]', () => {
     let genSFSpy: SinonSpy<any>;
-    beforeEach(() => (genSFSpy = spy(SF, 'genSF')));
+    beforeEach(() => (genSFSpy = spy(SF, 'generator')));
     afterEach(() => genSFSpy.restore());
     it('with json', async () => {
       await generator({ ...SPEC, ...{ paths: { '/a': {} } } }, { path: '/a' });

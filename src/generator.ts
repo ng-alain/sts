@@ -3,7 +3,8 @@ import * as request from 'request';
 import { Spec } from 'swagger-schema-official';
 
 import { Config, CONFIG, Options, Result } from './interfaces';
-import { genSF } from './sf';
+import { generator as genSF } from './sf';
+import { generator as genST } from './st';
 import { deepMerge } from './util';
 
 function getSwagger(pathOrUrl: string | Spec, options: any): Promise<Spec | null> {
@@ -30,16 +31,18 @@ export async function generator(
   config?: Config,
 ): Promise<Result> {
   const cog = deepMerge({}, CONFIG, config || {}) as Config;
+  if (options.type == null) {
+    options.type = 'sf';
+  }
   return new Promise(async (resolve, reject) => {
     const spec = await getSwagger(swaggerJsonPathOrUrl, cog.requestOptions);
     if (spec == null || typeof spec !== 'object') {
       reject(`Not found '${swaggerJsonPathOrUrl}' file or invalid download this file`);
       return;
     }
-    resolve({
-      spec,
-      sf: genSF(spec, options, cog),
-      st: null,
-    });
+
+    const value = options.type === 'st' ? genST(spec, options, cog) : genSF(spec, options, cog);
+
+    resolve({ spec, value });
   });
 }
