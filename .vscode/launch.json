@@ -9,9 +9,13 @@
     "request": "launch",
     "name": "test",
     "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
-    "args": ["-r", "ts-node/register", "test/generator.spec.ts"],
+    "args": ["-r", "ts-node/register", "test/sf.spec.ts"],
+    "env": {
+      "TS_NODE_PROJECT": "test/tsconfig.json"
+    },
     "cwd": "${workspaceRoot}",
     "protocol": "inspector",
-    "internalConsoleOptions": "openOnSessionStart"
+    "internalConsoleOptions": "openOnSessionStart",
+    "smartStep": false
   }]
 }

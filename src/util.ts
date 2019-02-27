@@ -1,4 +1,6 @@
+import extend from 'extend';
 import { Schema } from 'swagger-schema-official';
+import { FullSchemaDefinition } from './interfaces';
 
 const refPrefix = `#/definitions/`;
 
@@ -6,18 +8,32 @@ export function getDefinitionName(ref: string): string {
   return ref.substr(refPrefix.length);
 }
 
-export function getSchema(ref: string, def?: { [definitionsName: string]: Schema }): Schema | null {
-  if (!ref || ref.length <= refPrefix.length || !def) {
-    return null;
+export function findSchemaDefinition($ref: string, definitions: FullSchemaDefinition) {
+  const match = /^#\/definitions\/(.*)$/.exec($ref);
+  if (match && match[1]) {
+    // parser JSON Pointer
+    const parts = match[1].split('/');
+    let current: any = definitions;
+    for (let part of parts) {
+      part = part.replace(/~1/g, '/').replace(/~0/g, '~');
+      if (current.hasOwnProperty(part)) {
+        current = current[part];
+      } else {
+        console.error(`Could not find a definition for ${$ref}.`);
+        return null;
+      }
+    }
+    return current;
   }
-  return def[getDefinitionName(ref)] || null;
+  console.error(`Could not find a definition for ${$ref}.`);
+  return null;
 }
 
-export function mergeDefinitions(schema: Schema, def?: { [definitionsName: string]: Schema }) {
+export function mergeDefinitions(schema: Schema, definitions: FullSchemaDefinition) {
   const res: { [key: string]: Schema } = {};
   deepEach(schema, (key: string, value: string) => {
     if (key === '$ref') {
-      res[getDefinitionName(value)] = getSchema(value as string, def) as Schema;
+      res[getDefinitionName(value)] = findSchemaDefinition(value as string, definitions) as Schema;
     }
   });
   return res;
@@ -34,4 +50,45 @@ export function deepEach(obj: any, cb: (key: string, value: any) => void): void 
     });
   };
   inFn(obj);
+}
+
+export function deepCopy(obj: any): any {
+  const result = extend(true, {}, { _: obj });
+  return result._;
+}
+
+export function deepMergeKey(original: any, ingoreArray: boolean, ...objects: any[]): any {
+  if (Array.isArray(original) || typeof original !== 'object') return original;
+
+  const isObject = (v: any) => typeof v === 'object' || typeof v === 'function';
+
+  const merge = (target: any, obj: any) => {
+    Object.keys(obj)
+      .filter(key => key !== '__proto__' && Object.prototype.hasOwnProperty.call(obj, key))
+      .forEach(key => {
+        const oldValue = obj[key];
+        const newValue = target[key];
+        if (!ingoreArray && Array.isArray(newValue)) {
+          target[key] = [...newValue, ...oldValue];
+        } else if (
+          oldValue != null &&
+          isObject(oldValue) &&
+          newValue != null &&
+          isObject(newValue)
+        ) {
+          target[key] = merge(newValue, oldValue);
+        } else {
+          target[key] = deepCopy(oldValue);
+        }
+      });
+    return target;
+  };
+
+  objects.filter(v => isObject(v)).forEach(v => merge(original, v));
+
+  return original;
+}
+
+export function deepMerge(original: any, ...objects: any[]): any {
+  return deepMergeKey(original, false, ...objects);
 }

@@ -12,7 +12,7 @@
     "lint": "tslint -p tsconfig.json -c tslint.json 'src/**/*.ts'",
     "build": "bash ./build.sh",
     "build:test": "bash ./build.sh -t",
-    "test": "npm run mocha --recursive ./test/**/*.spec.ts",
+    "test": "TS_NODE_PROJECT=./test/tsconfig.json npm run mocha --recursive ./test/**/*.spec.ts",
     "mocha": "mocha -r ts-node/register",
     "ci": "npm run lint && npm run test",
     "release": "npm run build && cd dist && npm publish --access public"
@@ -36,22 +36,24 @@
   "dependencies": {
     "meow": "^5.0.0",
     "request": "^2.88.0",
-    "@delon/abc": "^7.0.0-rc.10",
-    "@delon/form": "^7.0.0-rc.10",
-    "@delon/util": "^7.0.0-rc.10"
+    "@types/swagger-schema-official": "^2.0.15",
+    "extend": "^3.0.2"
   },
   "devDependencies": {
     "@types/node": "^10.12.2",
     "@types/meow": "^5.0.0",
     "@types/mocha": "^5.2.5",
     "@types/chai": "^4.1.7",
-    "@types/swagger-schema-official": "^2.0.15",
+    "@types/extend": "^3.0.0",
     "typescript": "^3.2.2",
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.17.0",
     "mocha": "^5.2.0",
     "chalk": "^2.4.0",
-    "chai": "^4.2.0"
+    "chai": "^4.2.0",
+    "sinon": "^7.2.4",
+    "@types/sinon": "^7.0.7",
+    "@types/request": "^2.48.1"
   }
 }

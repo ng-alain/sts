@@ -1,41 +1,17 @@
 import * as fs from 'fs';
+import * as request from 'request';
 import { Spec } from 'swagger-schema-official';
-const request = require('request');
 
-import { Config, CONFIG, Options, PathConfig, Result } from './interfaces';
+import { Config, CONFIG, Options, Result } from './interfaces';
 import { genSF } from './sf';
-
-function mergeConfig(config?: Config): Config {
-  const cog = { ...CONFIG, ...config } as Config;
-  if (cog.paths == null) {
-    cog.paths = {};
-  }
-  const paths = cog.paths;
-  const newPaths: {
-    [path: string]: PathConfig[];
-  } = {};
-  Object.keys(paths).forEach(key => {
-    if (paths[key] == null) {
-      paths[key] = [];
-    }
-    // paths[key]
-    //   .filter(i => typeof i.key === 'string')
-    //   .forEach(i => {
-    //     i.key = new RegExp(i.key);
-    //   });
-
-    newPaths[`${cog.pathPrefix || ''}${key}`] = paths[key];
-  });
-  cog.paths = newPaths;
-  return cog;
-}
+import { deepMerge } from './util';
 
 function getSwagger(pathOrUrl: string | Spec, options: any): Promise<Spec | null> {
   return new Promise(resolve => {
     if (typeof pathOrUrl === 'object') {
       return resolve(pathOrUrl as Spec);
     } else if (pathOrUrl.startsWith('http:') || pathOrUrl.startsWith('https:')) {
-      return request(pathOrUrl, options, (error: any, response: any, body: string) => {
+      return request.get(pathOrUrl, options, (error: any, response: any, body: string) => {
         resolve(JSON.parse(body));
       });
     } else if (pathOrUrl.trim().startsWith('{')) {
@@ -53,7 +29,7 @@ export async function generator(
   options: Options,
   config?: Config,
 ): Promise<Result> {
-  const cog: Config = mergeConfig(config);
+  const cog = deepMerge({}, CONFIG, config || {}) as Config;
   return new Promise(async (resolve, reject) => {
     const spec = await getSwagger(swaggerJsonPathOrUrl, cog.requestOptions);
     if (spec == null || typeof spec !== 'object') {
