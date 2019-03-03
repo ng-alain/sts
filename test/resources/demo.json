@@ -927,7 +927,10 @@
         },
         "name": {
           "type": "string",
-          "example": "doggie"
+          "example": "doggie",
+          "xml": {
+            "i18n": "app.name"
+          }
         },
         "photoUrls": {
           "type": "array",

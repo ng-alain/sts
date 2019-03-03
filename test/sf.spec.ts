@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { spy } from 'sinon';
+import { fake, spy } from 'sinon';
 import { BodyParameter, Schema, Spec } from 'swagger-schema-official';
 import { generator } from '../src/generator';
-import { Config, Options, Result } from '../src/interfaces';
+import { Config, FullSchema, Options, Result } from '../src/interfaces';
 import { deepCopy } from '../src/util';
 import { SPEC } from './const';
 
@@ -58,7 +58,7 @@ describe('sf', () => {
       await page.getResult(data);
       page.checkDefine('email', 'format', false);
     });
-    it('should be deleted format property when format is int32 or int64', async () => {
+    it('should be deleted format property when type is integer or number', async () => {
       const data = page.getData({
         properties: {
           email: { type: 'string', format: 'int32' },
@@ -161,10 +161,49 @@ describe('sf', () => {
       page.checkValue('list', 'type', 'number');
     });
   });
+
+  it('should be override ui via xml date', async () => {
+    const data = page.getData({
+      properties: {
+        email: { type: 'string', xml: { i18n: 'app.name', invalid: 'invalid' } as any },
+      },
+    });
+    await page.getResult(data, null, {
+      descriptionIsTitle: false,
+      propertyMapNames: { email: '' },
+      sf: {
+        xmlBlackNames: ['i18n'],
+      },
+    });
+    const ui = page.getValue('email', 'ui');
+    expect(typeof ui === 'object').eq(true);
+    expect(ui.i18n).eq('app.name');
+    page.checkDefine('email', 'invalid', false);
+  });
+
+  it('#eachCallback', async () => {
+    const options = {
+      sf: {
+        propertyCallback: fake(),
+      },
+    };
+    await page.getResult(undefined, null, options);
+    expect(options.sf.propertyCallback.called).eq(true);
+  });
+
+  it('#finishedCallback', async () => {
+    const options = {
+      sf: {
+        finishedCallback: fake(),
+      },
+    };
+    await page.getResult(undefined, null, options);
+    expect(options.sf.finishedCallback.called).eq(true);
+  });
 });
 
 class SFPage {
-  public res: Result = {};
+  public res: Result | null = null;
 
   public getData(override?: Schema, propertyName?: string): Spec {
     const data = deepCopy(SPEC) as Spec;
@@ -178,22 +217,30 @@ class SFPage {
     return data;
   }
 
-  public async getResult(data: Spec, options: Options | null = null, config: Config | null = null) {
+  public async getResult(data?: Spec, options?: Options | null, config: Config | null = null) {
     this.res = await generator(
-      data,
-      options || { type: 'sf', path: '/pet', method: 'post' },
+      data || this.getData(),
+      { type: 'sf', path: '/pet', method: 'post', ...options },
       config as Config,
     );
     return this;
   }
 
+  public get properties() {
+    return (this.res!.value as FullSchema)!.properties;
+  }
+
+  public getValue(name: string, key: string) {
+    return (this.properties![name] as any)![key];
+  }
+
   public checkValue(name: string, key: string, value: any) {
-    expect(this.res!.value!.properties![name]![key]).eq(value);
+    expect((this.properties![name] as any)![key]).eq(value);
     return this;
   }
 
   public checkDefine(name: string, key: string, result: boolean) {
-    const isUndefined = typeof this.res!.value!.properties![name]![key] === 'undefined';
+    const isUndefined = typeof (this.properties![name] as any)![key] === 'undefined';
     expect(isUndefined).eq(!result);
     return this;
   }

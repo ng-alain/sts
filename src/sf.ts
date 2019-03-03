@@ -18,6 +18,8 @@ function coverProperty(options: RunOptions): FullSchema {
       const property = properties[propertyName] as FullSchema;
       fixDefaultProperty(propertyName, property, options);
       Object.assign(property, getCustomProperty('sf', propertyName, options) as Schema);
+      // Fix ui
+      fixXml(propertyName, property, options);
       // removed xml
       removeXml(property);
       if (eachCallback) {
@@ -49,6 +51,8 @@ function fixDefaultProperty(
   property: FullSchema,
   options: RunOptions,
 ): FullSchema | null {
+  // type
+  fixType(name, property, options);
   // format
   fixFormat(name, property, options);
   // Title
@@ -70,6 +74,10 @@ function getDefaultFormatByName(name: string): string {
   return '';
 }
 
+function fixType(name: string, property: FullSchema, options: RunOptions): void {
+  // https://swagger.io/specification/
+}
+
 function fixFormat(name: string, property: FullSchema, options: RunOptions): void {
   if (property.format == null) {
     property.format = getDefaultFormatByName(name);
@@ -77,8 +85,12 @@ function fixFormat(name: string, property: FullSchema, options: RunOptions): voi
   if (property.format.length === 0) {
     delete property.format;
   }
-  // removed: int32, int64
-  if (property.format === 'int32' || property.format === 'int64') {
+  if (
+    property.format === 'int32' ||
+    property.format === 'int64' ||
+    property.format === 'float' ||
+    property.format === 'double'
+  ) {
     delete property.format;
     if (property.type !== 'integer' && property.type !== 'number') {
       property.type = 'number';
@@ -121,6 +133,21 @@ function fixSingleArray(property: FullSchema, options: RunOptions): void {
   }
 }
 
+function fixXml(name: string, property: FullSchema, options: RunOptions): void {
+  const names = options.config.st!.xmlBlackNames;
+  if (!property.xml || !names || names.length === 0) {
+    return;
+  }
+  names.forEach(key => {
+    const value = (property.xml as any)[key];
+    if (typeof value === 'undefined') return;
+    if (typeof property.ui === 'undefined') {
+      property.ui = {};
+    }
+    property.ui[key] = value;
+  });
+}
+
 export function generator(data: Spec, options: Options, config: Config): ResultValue | null {
   const path = `${config.pathPrefix || ''}${options.path}`;
   const method = options.method || config.sf!.method || 'put';
@@ -129,7 +156,7 @@ export function generator(data: Spec, options: Options, config: Config): ResultV
     return null;
   }
   const oper = pathObj[method] as Operation;
-  if (!oper || !oper.parameters || oper.parameters.length <= 0) {
+  if (!oper.parameters || oper.parameters.length <= 0) {
     return null;
   }
 

@@ -42,6 +42,17 @@ export const CONFIG: Config = {
   },
   st: {
     method: 'get',
+    nameToType: {
+      price: 'currency',
+      amount: 'currency',
+      num: 'number',
+      count: 'number',
+      avatar: 'img',
+      mp: 'img',
+      modified: 'date',
+      created: 'date',
+    },
+    xmlBlackNames: ['i18n'],
     properties: [],
   },
 };
@@ -77,7 +88,7 @@ export interface Config {
 
 export interface Result {
   spec: Spec;
-  value: ResultValue | null;
+  value: ResultValue | ResultValue[] | null;
 }
 
 export interface ResultValue {
@@ -125,6 +136,10 @@ export interface SFConfig {
   singleArray?: SFSchema;
   /** 自定义属性的 `Schema` */
   properties?: PathConfig[];
+  /**
+   * XML 属性白名单，这些信息会以优先级最高直接传递给 `ui`
+   */
+  xmlBlackNames?: string[];
   /** 递归属性回调 */
   propertyCallback?: (optinos: SFPropertyCallbackOptions) => void;
   /** 完成时回调 */
@@ -152,6 +167,15 @@ export interface STConfig {
   method?: string;
   /** 自定义属性的 `Schema` */
   properties?: PathConfig[];
+  /**
+   * 根据名称自定义类型，例如：
+   * - `price` => `currency`
+   */
+  nameToType?: { [name: string]: STColumnType };
+  /**
+   * XML 属性白名单，这些信息会以优先级最高直接传递给 `STColumn`，默认：`['i18n']`
+   */
+  xmlBlackNames?: string[];
   /** 递归属性回调 */
   propertyCallback?: (optinos: STPropertyCallbackOptions) => void;
   /** 完成时回调 */
@@ -301,11 +325,25 @@ export interface SFSchema {
 
 export interface FullSchema extends Schema {
   definitions?: FullSchemaDefinition;
+  ui?: { [key: string]: any };
 }
 
 export interface FullSchemaDefinition {
   [definitionsName: string]: FullSchema;
 }
+
+export type STColumnType =
+  | 'checkbox'
+  | 'link'
+  | 'badge'
+  | 'tag'
+  | 'radio'
+  | 'img'
+  | 'currency'
+  | 'number'
+  | 'date'
+  | 'yn'
+  | 'no';
 
 export interface STColumn {
   [key: string]: any;
@@ -343,18 +381,7 @@ export interface STColumn {
    * - `date` 日期格式且居中(若 `className` 存在则优先)，使用 `dateFormat` 自定义格式
    * - `yn` 将`boolean`类型徽章化 [document](https://ng-alain.com/docs/data-render#yn)
    */
-  type?:
-    | 'checkbox'
-    | 'link'
-    | 'badge'
-    | 'tag'
-    | 'radio'
-    | 'img'
-    | 'currency'
-    | 'number'
-    | 'date'
-    | 'yn'
-    | 'no';
+  type?: STColumnType;
   /**
    * 按钮组
    */
