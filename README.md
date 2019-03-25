@@ -28,13 +28,13 @@ ng g ng-alain:module trade
 ng g ng-alain:tpl swagger-list list -m=trade -t=trade --swaggerPath=/pet/findByStatus
 ```
 
+> 更多请参考[sts](https://ng-alain.com/cli/plugin#sts)插件。
+
 ### 命令行
 
 ```bash
 ng-alain-sts -t=sf -p=/pet swagger.json
 ```
-
-> 更多请参考[sts](https://ng-alain.com/cli/plugin#sts)插件。
 
 **参数**
 
@@ -48,9 +48,13 @@ ng-alain-sts -t=sf -p=/pet swagger.json
 ### 调用
 
 ```ts
-import { generator } from 'ng-alain-sts';
+const sts = require('ng-alain-sts/src/generator');
 
-const result = await generator('demo.json', { path: '/a' });
+await sts.generator(
+  'https://petstore.swagger.io/v2/swagger.json',
+  { type: 'sf' },
+  { descriptionIsTitle: true }
+);
 ```
 
 ## 配置文件
