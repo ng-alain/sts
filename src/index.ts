@@ -41,6 +41,8 @@ const cli = meow({
   },
 });
 
+console.log(cli.input);
+
 const options = {
   ...cli.flags,
 } as Options;
@@ -61,4 +63,4 @@ try {
   process.exit(1);
 }
 
-generator('', options, configInFile);
+generator(cli.input[0], options, configInFile);

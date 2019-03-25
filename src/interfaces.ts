@@ -58,7 +58,7 @@ export const CONFIG: Config = {
 };
 
 export interface Config {
-  /** 请求 swagger JSON 文件[配置项](https://github.com/request/request#requestoptions-callback) */
+  /** Swagger JSON 文件[网络请求配置项](https://github.com/request/request#requestoptions-callback) */
   requestOptions?: any;
   /** 路径前缀 */
   pathPrefix?: string;
@@ -111,7 +111,7 @@ export interface PathConfig {
   /**
    * 值分为 `SFSchema` 或 `STColumn` 类型
    */
-  value?: SFSchema;
+  value?: SFSchema | STColumn;
 }
 
 export interface SFPropertyCallbackOptions {
@@ -129,7 +129,7 @@ export interface SFFinishedCallbackOptions {
 
 export interface SFConfig {
   /**
-   * 指定方法，默认：`put`
+   * 指定默认方法名，默认：`put`
    */
   method?: string;
   /** 由于 `sf` 并不支持这种类型，默认被转化为 `select` 小部件 */
@@ -162,7 +162,7 @@ export interface STFinishedCallbackOptions {
 
 export interface STConfig {
   /**
-   * 指定方法，默认：`get`
+   * 指定默认方法名，默认：`get`
    */
   method?: string;
   /** 自定义属性的 `Schema` */
