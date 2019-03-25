@@ -1,6 +1,6 @@
 {
   "name": "ng-alain-sts",
-  "version": "0.0.1",
+  "version": "0.0.1-bate.1",
   "description": "Swagger to sf schema & st column in ng-alain",
   "main": "./src/index",
   "author": "cipchk",

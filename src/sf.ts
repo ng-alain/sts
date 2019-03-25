@@ -22,6 +22,10 @@ function coverProperty(options: RunOptions): FullSchema {
       fixXml(propertyName, property, options);
       // removed xml
       removeXml(property);
+      // removed other invalid properties
+      ['example'].forEach(k => {
+        delete (property as any)[k];
+      });
       if (eachCallback) {
         eachCallback({
           name: propertyName,
@@ -153,15 +157,18 @@ export function generator(data: Spec, options: Options, config: Config): ResultV
   const method = options.method || config.sf!.method || 'put';
   const pathObj = data.paths[path] as any;
   if (pathObj == null || pathObj[method] == null) {
+    console.warn(`Not found method [${method}] or [${path}]`);
     return null;
   }
   const oper = pathObj[method] as Operation;
   if (!oper.parameters || oper.parameters.length <= 0) {
+    console.warn(`Not found parameters in [${path},${method}]`);
     return null;
   }
 
   const inBody = oper.parameters.find((w: any) => w.in === 'body') as BodyParameter;
   if (!inBody) {
+    console.warn(`Not found body in [${path},${method}]`);
     return null;
   }
 

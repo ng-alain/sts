@@ -41,8 +41,6 @@ const cli = meow({
   },
 });
 
-console.log(cli.input);
-
 const options = {
   ...cli.flags,
 } as Options;

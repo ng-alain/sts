@@ -6,6 +6,28 @@ Convert Swagger API to [sf](https://ng-alain.com/form/schema) Schema & [st](http
 
 `ng-alain-sts` 是一个 Node 插件，你可以使用命令行或直接调用 `generator` 方法来获取转换后的 `sf` Schema 和 `st` 列描述。
 
+```bash
+# via npm
+npm i ng-alain-sts --save-dev
+# via yarn
+yarn add -D ng-alain-sts
+```
+
+### ng-alain
+
+`ng-alain-sts` 是专注于 NG-ALAIN，因此在 NG-ALAIN CLI 提供一个快捷命令：
+
+```bash
+ng g ng-alain:sts
+```
+
+它包含 `list`、`edit` 两个[自定义模板](https://ng-alain.com/cli/generate#Custom-template-page)，可以通过指令根据 Swagger API 接口来生成列表、编辑页。
+
+```bash
+ng g ng-alain:module trade
+ng g ng-alain:tpl swagger-list list -m=trade -t=trade --swaggerPath=/pet/findByStatus
+```
+
 ### 命令行
 
 ```bash
@@ -105,7 +127,6 @@ Swagger API 接口对于每一个后端语言或企业风格有着统一的编�
 | `name` | 属性名称 | `string` | - |
 | `path` | 指定路径，若不指定则该属性名对所有 path 有效 | `string` | - |
 | `value` | 值分为 `SFSchema` 或 `STColumn` 类型 | `SFSchema | STColumn` | - |
-
 
 ## License
 

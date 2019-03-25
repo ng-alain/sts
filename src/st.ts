@@ -149,15 +149,18 @@ export function generator(data: Spec, options: Options, config: Config): ResultV
   const method = options.method || config.st!.method || 'get';
   const pathObj = data.paths[path] as any;
   if (pathObj == null || pathObj[method] == null) {
+    console.warn(`Not found method [${method}] or [${path}]`);
     return null;
   }
   const oper = pathObj[method] as Operation;
   if (!oper.responses || !oper.responses!['200']) {
+    console.warn(`Not found 200 response in [${path},${method}]`);
     return null;
   }
   const successResponse = oper.responses!['200'] as Response;
   // The response body should be the object
   if (!successResponse || !successResponse.schema || successResponse.schema.type !== 'array') {
+    console.warn(`Type muse be array schema in [${path},${method},200]`);
     return null;
   }
 
