@@ -34,6 +34,8 @@ ng g ng-alain:tpl swagger-list list -m=trade -t=trade --swaggerPath=/pet/findByS
 ng-alain-sts -t=sf -p=/pet swagger.json
 ```
 
+> 更多请参考[sts](https://ng-alain.com/cli/plugin#sts)插件。
+
 **参数**
 
 | 参数名          | 类型     | 默认                  | 描述                       |
